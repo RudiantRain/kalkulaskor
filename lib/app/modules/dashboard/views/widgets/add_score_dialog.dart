@@ -50,7 +50,7 @@ class AddScoreDialog extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   'Mohon isi masing-masing skor dengan bilangan kelipatan '
-                  '${DashboardController.scoreStep}',
+                  '${controller.scoreStep}',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.error,
                     fontStyle: FontStyle.italic,

@@ -146,7 +146,12 @@ class DashboardView extends GetView<DashboardController> {
               const PopupMenuDivider(),
 
               PopupMenuItem<String>(
-                onTap: () => controller.resetGame(),
+                // Post-frame for the same reason as "Info": PopupMenuItem pops
+                // its own route before running onTap, and opening a dialog
+                // mid-teardown throws "No Overlay widget found".
+                onTap: () => WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => controller.openGameSetupDialog(cancellable: true),
+                ),
                 value: 'Mulai Ulang',
                 child: Row(
                   children: [
@@ -169,7 +174,7 @@ class DashboardView extends GetView<DashboardController> {
           margin: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              colors: [Get.theme.hoverColor, Get.theme.canvasColor],
+              colors: [theme.hoverColor, theme.canvasColor],
               center: Alignment.bottomLeft,
               radius: 0.9,
             ),
@@ -183,15 +188,23 @@ class DashboardView extends GetView<DashboardController> {
               margin: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      _IndicatorChip(icon: Icons.flag_circle, text: '500'),
-                      _IndicatorChip(
-                        icon: Icons.add_circle_outline_rounded,
-                        text: '5',
-                      ),
-                      _IndicatorChip(icon: Icons.person_2_rounded, text: '4'),
-                    ],
+                  Obx(
+                    () => Row(
+                      children: [
+                        _IndicatorChip(
+                          icon: Icons.emoji_events_rounded,
+                          text: '${controller.winningScore}',
+                        ),
+                        _IndicatorChip(
+                          icon: Icons.add_circle_outline_rounded,
+                          text: '${controller.scoreStep}',
+                        ),
+                        _IndicatorChip(
+                          icon: Icons.person_2_rounded,
+                          text: '${controller.playerCount}',
+                        ),
+                      ],
+                    ),
                   ),
                   Divider(color: Colors.grey, thickness: 1),
                   Obx(
