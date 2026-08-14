@@ -6,6 +6,7 @@ class AppTheme {
     indicatorColor: Colors.grey.shade800,
     brightness: Brightness.light,
     canvasColor: Color(0xFFCCEC0C),
+    hoverColor: Color.fromARGB(255, 145, 170, 0),
     scaffoldBackgroundColor: const Color(0xFFF3F3F3),
     colorScheme: ColorScheme.fromSeed(
       seedColor: Colors.grey.shade800,
@@ -29,6 +30,7 @@ class AppTheme {
     brightness: Brightness.dark,
     indicatorColor: Colors.white,
     canvasColor: Color(0xFFCCEC0C),
+    hoverColor: Color.fromARGB(255, 145, 170, 0),
     scaffoldBackgroundColor: Colors.grey.shade800,
     colorScheme: ColorScheme.fromSeed(
       seedColor: Colors.grey.shade800,
