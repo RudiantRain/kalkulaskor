@@ -353,8 +353,8 @@ class DashboardController extends GetxController {
   void _announceRoundOutcome(List<int> totals) {
     final highestScore = totals.reduce(max);
     final lowestScore = totals.reduce(min);
-    final leadingPlayer = playerNames[totals.indexOf(highestScore)];
-    final trailingPlayer = playerNames[totals.indexOf(lowestScore)];
+    final leadingIndex = totals.indexOf(highestScore);
+    final trailingIndex = totals.indexOf(lowestScore);
 
     // _openDialog, not Get.dialog: this runs right after submitScoreEntry has
     // already claimed its action, so the guard has to be re-armed or the
@@ -364,7 +364,7 @@ class DashboardController extends GetxController {
         GameResultDialog(
           controller: this,
           isWinner: true,
-          playerName: leadingPlayer,
+          playerIndex: leadingIndex,
           score: highestScore,
         ),
         barrierDismissible: false,
@@ -377,13 +377,15 @@ class DashboardController extends GetxController {
         GameResultDialog(
           controller: this,
           isWinner: false,
-          playerName: trailingPlayer,
+          playerIndex: trailingIndex,
           score: lowestScore,
         ),
         barrierDismissible: false,
       );
       return;
     }
+
+    final leadingPlayer = playerNames[leadingIndex];
 
     _showMessage(
       'Selamat!',

@@ -44,3 +44,12 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 kalkulaskor.zip
+
+# Release signing secrets. android/.gitignore already covers these inside the
+# android/ folder; these lines catch a keystore dropped anywhere else in the
+# repo. Never commit either - the keystore cannot be re-issued, and losing or
+# leaking it means the app can never be updated under the same identity again.
+key.properties
+*.jks
+*.keystore
+android/key.properties.example
