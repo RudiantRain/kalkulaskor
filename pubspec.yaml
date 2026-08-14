@@ -36,6 +36,7 @@ dependencies:
   intl: 0.19.0
   google_fonts: ^8.2.1
   showcaseview: ^5.1.0
+  flutter_launcher_icons: ^0.14.4
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -44,6 +45,30 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+
+# Launcher icon generation. Regenerate with:
+#   dart run flutter_launcher_icons
+#
+# android: true overwrites the existing mipmap ic_launcher files, which is what
+# AndroidManifest.xml already points at - so no manifest change is needed.
+# Only the android platform folder exists in this project, hence nothing else.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/kalkulatoremiblack.png"
+  # The dark-crown artwork is the light-background variant (its sibling
+  # kalkulatoremiwhite.png has a white crown, meant for dark surfaces), so the
+  # adaptive background is white. That also makes the source's own white
+  # backdrop blend in seamlessly.
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/kalkulatoremiblack.png"
+  # The artwork fills its own canvas edge to edge, so the default 16% inset left
+  # it at 68% of the icon - wider than the 66.7% safe zone a launcher mask
+  # guarantees, which is why the crown looked cramped. 22% puts it at 56%,
+  # comfortably inside with margin on both axes.
+  adaptive_icon_foreground_inset: 22
+  min_sdk_android: 21
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
