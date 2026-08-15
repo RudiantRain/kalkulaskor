@@ -6,39 +6,55 @@ import 'package:get_storage/get_storage.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 import '../../../../shared/controllers/theme_controller.dart';
+import '../../../data/models/game_settings.dart';
 import '../views/widgets/about_app_dialog.dart';
 import '../views/widgets/add_score_dialog.dart';
 import '../views/widgets/delete_score_dialog.dart';
 import '../views/widgets/edit_player_name_dialog.dart';
 import '../views/widgets/game_result_dialog.dart';
+import '../views/widgets/game_setup_dialog.dart';
 import '../views/widgets/saved_game_dialog.dart';
 
 class DashboardController extends GetxController {
-  static const playerCount = 4;
-  static const scoreStep = 5;
-  static const winningScore = 500;
-
   static const _playerNamesStorageKey = 'dashboard_player_names';
   static const _playerScoresStorageKey = 'dashboard_player_scores';
+  static const _settingsStorageKey = 'dashboard_game_settings';
 
   final _storage = GetStorage();
   final showcase = ShowcaseView.register();
 
   ThemeController get _themeController => Get.find<ThemeController>();
 
-  final playerNames = List.generate(
-    playerCount,
-    (i) => '${String.fromCharCode(65 + i)}(edit)',
+  /// The rules of the game in progress. Reactive so the indicator chips and
+  /// the score grid follow a change immediately.
+  final settings = GameSettings.defaults.obs;
+
+  int get playerCount => settings.value.playerCount;
+  int get scoreStep => settings.value.scoreStep;
+  int get winningScore => settings.value.winningScore;
+
+  final playerNames = _defaultPlayerNames(
+    GameSettings.defaults.playerCount,
   ).obs;
 
-  final scores = <List<int>>[List.filled(playerCount, 0)].obs;
+  final scores = <List<int>>[
+    List.filled(GameSettings.defaults.playerCount, 0),
+  ].obs;
 
   final scoreInputIsInvalid = false.obs;
 
   final editNameController = TextEditingController();
-  final scoreEntryControllers = List.generate(
-    playerCount,
+
+  /// One field per player, so this list is rebuilt whenever playerCount
+  /// changes. Not final for that reason - see [_rebuildScoreEntryControllers].
+  var scoreEntryControllers = List.generate(
+    GameSettings.defaults.playerCount,
     (_) => TextEditingController(),
+  );
+
+  static List<String> _defaultPlayerNames(int count) => List.generate(
+    count,
+    (i) => '${String.fromCharCode(65 + i)}(edit)',
   );
 
   final playerNamesShowcaseKey = GlobalKey();
@@ -53,7 +69,14 @@ class DashboardController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    _promptResumeSavedGame();
+
+    // A game already on record is resumed, never reconfigured - the setup form
+    // must not appear and interrupt a match in progress.
+    if (_hasSavedGame) {
+      _openDialog(SavedGameDialog(controller: this));
+    } else {
+      openGameSetupDialog(cancellable: false);
+    }
   }
 
   @override
@@ -115,9 +138,60 @@ class DashboardController extends GetxController {
 
   void openAboutDialog() => _openDialog(AboutAppDialog(controller: this));
 
-  void _promptResumeSavedGame() {
-    if (_storage.read(_playerNamesStorageKey) == null) return;
-    _openDialog(SavedGameDialog(controller: this));
+  bool get _hasSavedGame => _storage.read(_playerNamesStorageKey) != null;
+
+  /// Shows the form that starts a new game.
+  ///
+  /// [cancellable] is false wherever there is no game left to fall back on
+  /// (first launch, after a winner, after discarding a saved game) - there the
+  /// form is also barrier- and back-proof. It is true only for the pop-up menu,
+  /// where cancelling means "never mind, keep playing".
+  void openGameSetupDialog({required bool cancellable}) {
+    _openDialog(
+      GameSetupDialog(
+        controller: this,
+        initialSettings: settings.value,
+        cancellable: cancellable,
+      ),
+      barrierDismissible: cancellable,
+    );
+  }
+
+  /// Applies [newSettings] and clears the board for a fresh game.
+  void startNewGame(GameSettings newSettings) {
+    if (!_claimDialogAction()) return;
+    Get.back();
+
+    _applySettings(newSettings);
+    playerNames.assignAll(_namesResizedTo(newSettings.playerCount));
+    scores.assignAll([List.filled(newSettings.playerCount, 0)]);
+    _persistGame();
+  }
+
+  void _applySettings(GameSettings newSettings) {
+    settings.value = newSettings;
+    _rebuildScoreEntryControllers(newSettings.playerCount);
+  }
+
+  /// One entry field per player. The old controllers are disposed here; leaving
+  /// them behind on every player-count change would leak them.
+  void _rebuildScoreEntryControllers(int count) {
+    if (scoreEntryControllers.length == count) return;
+
+    for (final entry in scoreEntryControllers) {
+      entry.dispose();
+    }
+    scoreEntryControllers = List.generate(count, (_) => TextEditingController());
+  }
+
+  /// Keeps the names already entered, trimming or padding to [count]. Groups
+  /// tend to be the same people game after game.
+  List<String> _namesResizedTo(int count) {
+    final defaults = _defaultPlayerNames(count);
+    return List.generate(
+      count,
+      (i) => i < playerNames.length ? playerNames[i] : defaults[i],
+    );
   }
 
   void resumeSavedGame() {
@@ -127,17 +201,54 @@ class DashboardController extends GetxController {
     final savedScores = (_storage.read(_playerScoresStorageKey) as List)
         .map((round) => List<int>.from(round as List))
         .toList();
+    final savedSettings = _readSavedSettings(fallbackPlayerCount: savedNames.length);
+
     if (!_claimDialogAction()) return;
     Get.back();
 
+    // Settings first: every row in `scores` is playerCount wide, so restoring
+    // the board before its rules would leave the grid and the entry form
+    // disagreeing about how many players there are.
+    _applySettings(savedSettings);
     playerNames.assignAll(savedNames);
     scores.assignAll(savedScores);
+  }
+
+  /// Reads the stored rules. Games recorded before settings existed have no
+  /// entry, so the player count is inferred from the saved names instead.
+  GameSettings _readSavedSettings({required int fallbackPlayerCount}) {
+    final stored = _storage.read(_settingsStorageKey);
+    if (stored is Map) return GameSettings.fromJson(stored);
+
+    return GameSettings.defaults.copyWith(
+      playerCount: fallbackPlayerCount.clamp(
+        GameSettings.minPlayerCount,
+        GameSettings.maxPlayerCount,
+      ),
+    );
   }
 
   void discardSavedGame() {
     if (!_claimDialogAction()) return;
     Get.back();
+
+    // Take the previous names and rules into memory before the record goes:
+    // restarting is normally the same group playing the same variant, so those
+    // are the values the setup form should open with.
+    _adoptSavedNamesAndSettings();
+
     resetGame();
+    _openSetupDialogNextFrame();
+  }
+
+  /// Loads only the names and rules of the stored game, not its scores.
+  void _adoptSavedNamesAndSettings() {
+    final storedNames = _storage.read(_playerNamesStorageKey);
+    if (storedNames is! List) return;
+
+    final savedNames = List<String>.from(storedNames);
+    _applySettings(_readSavedSettings(fallbackPlayerCount: savedNames.length));
+    playerNames.assignAll(savedNames);
   }
 
   /// Backs the "OK. Mulai Ulang!" button on the win/lose dialog.
@@ -145,6 +256,16 @@ class DashboardController extends GetxController {
     if (!_claimDialogAction()) return;
     Get.back();
     resetGame();
+    _openSetupDialogNextFrame();
+  }
+
+  /// Chaining one dialog straight after closing another reaches for GetX's
+  /// overlay while it is still tearing down ("No Overlay widget found"). The
+  /// next frame is safe.
+  void _openSetupDialogNextFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      openGameSetupDialog(cancellable: false);
+    });
   }
 
   Future<void> _persistGame() async {
@@ -153,11 +274,13 @@ class DashboardController extends GetxController {
       _playerScoresStorageKey,
       scores.map((round) => round.toList()).toList(),
     );
+    await _storage.write(_settingsStorageKey, settings.value.toJson());
   }
 
   Future<void> _clearSavedGame() async {
     await _storage.remove(_playerNamesStorageKey);
     await _storage.remove(_playerScoresStorageKey);
+    await _storage.remove(_settingsStorageKey);
   }
 
   void openEditPlayerNameDialog(int index) {
@@ -230,8 +353,8 @@ class DashboardController extends GetxController {
   void _announceRoundOutcome(List<int> totals) {
     final highestScore = totals.reduce(max);
     final lowestScore = totals.reduce(min);
-    final leadingPlayer = playerNames[totals.indexOf(highestScore)];
-    final trailingPlayer = playerNames[totals.indexOf(lowestScore)];
+    final leadingIndex = totals.indexOf(highestScore);
+    final trailingIndex = totals.indexOf(lowestScore);
 
     // _openDialog, not Get.dialog: this runs right after submitScoreEntry has
     // already claimed its action, so the guard has to be re-armed or the
@@ -241,7 +364,7 @@ class DashboardController extends GetxController {
         GameResultDialog(
           controller: this,
           isWinner: true,
-          playerName: leadingPlayer,
+          playerIndex: leadingIndex,
           score: highestScore,
         ),
         barrierDismissible: false,
@@ -254,13 +377,15 @@ class DashboardController extends GetxController {
         GameResultDialog(
           controller: this,
           isWinner: false,
-          playerName: trailingPlayer,
+          playerIndex: trailingIndex,
           score: lowestScore,
         ),
         barrierDismissible: false,
       );
       return;
     }
+
+    final leadingPlayer = playerNames[leadingIndex];
 
     _showMessage(
       'Selamat!',

@@ -46,8 +46,11 @@ class SplashView extends GetView<SplashController> {
               padding: const EdgeInsets.all(20),
               width: Get.width,
               decoration: BoxDecoration(
-                color: Get.theme.canvasColor,
                 borderRadius: BorderRadius.circular(20),
+                gradient: RadialGradient(
+                  colors: [Get.theme.hoverColor, Get.theme.canvasColor],
+                  center: Alignment.topRight,radius: 0.9
+                ),
                 // Yellow color
               ),
               child: Column(
@@ -62,9 +65,9 @@ class SplashView extends GetView<SplashController> {
                       fontWeight: FontWeight.w900,
                       shadows: [
                         Shadow(
-                          blurRadius: 1, // Softness of the shadow
+                          blurRadius: 10, // Softness of the shadow
                           color: Get.theme.indicatorColor, // Shadow color
-                          offset: Offset(1.0, 1.0), // X and Y displacement
+                          offset: Offset(0.0, 0.0), // X and Y displacement
                         ),
                       ],
                     ),
@@ -77,9 +80,9 @@ class SplashView extends GetView<SplashController> {
                       fontSize: 17,
                       shadows: [
                         Shadow(
-                          blurRadius: 1, // Softness of the shadow
+                          blurRadius: 10, // Softness of the shadow
                           color: Get.theme.indicatorColor, // Shadow color
-                          offset: Offset(1.0, 1.0), // X and Y displacement
+                          offset: Offset(0.0, 0.0), // X and Y displacement
                         ),
                       ],
                     ),
@@ -96,16 +99,17 @@ class SplashView extends GetView<SplashController> {
                         ),
                       ),
                       child: Text(
-                        "Mulai Sekarang",
+                        "Mulai",
                         style: TextStyle(
                           fontFamily: 'Roboto',
                           color: Get.theme.canvasColor,
-                          fontWeight: FontWeight.normal,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
                           shadows: [
                             Shadow(
-                              blurRadius: 1, // Softness of the shadow
+                              blurRadius: 10, // Softness of the shadow
                               color: Get.theme.indicatorColor, // Shadow color
-                              offset: Offset(1.0, 1.0), // X and Y displacement
+                              offset: Offset(0.0, 0.0), // X and Y displacement
                             ),
                           ],
                         ),

@@ -83,71 +83,6 @@ class DashboardView extends GetView<DashboardController> {
             ), // Use any icon like Icons.filter_list, Icons.menu, etc.
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               PopupMenuItem<String>(
-                onTap: () => controller.startTour(),
-                value: 'Tutorial',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.question_mark_rounded,
-                      color: theme.indicatorColor,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Tutorial',
-                      style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                onTap: () => controller.resetGame(),
-                value: 'Mulai Ulang',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.refresh_rounded,
-                      color: theme.indicatorColor,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Mulai Ulang',
-                      style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                // PopupMenuItem pops its own route *before* running onTap, so
-                // opening a dialog synchronously here would reach for GetX's
-                // overlay while it is still tearing down ("No Overlay widget
-                // found"). One frame later it is safe.
-                onTap: () => WidgetsBinding.instance.addPostFrameCallback(
-                  (_) => controller.openAboutDialog(),
-                ),
-                value: 'info',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      color: theme.indicatorColor,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Info',
-                      style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const PopupMenuDivider(),
-              PopupMenuItem<String>(
                 onTap: themeController.toggleTheme,
                 value: 'Ganti Tema',
                 child: Row(
@@ -164,9 +99,67 @@ class DashboardView extends GetView<DashboardController> {
                     const SizedBox(width: 10),
                     Text(
                       'Ganti Tema',
-                      style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    ),
+                  ],
+                ),
+              ),
+
+              PopupMenuItem<String>(
+                onTap: () => controller.startTour(),
+                value: 'Tutorial',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.question_mark_rounded,
+                      color: theme.indicatorColor,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Tutorial',
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    ),
+                  ],
+                ),
+              ),
+
+              PopupMenuItem<String>(
+                onTap: () => WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => controller.openAboutDialog(),
+                ),
+                value: 'info',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: theme.indicatorColor,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Info',
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    ),
+                  ],
+                ),
+              ),
+
+              const PopupMenuDivider(),
+
+              PopupMenuItem<String>(
+                // Post-frame for the same reason as "Info": PopupMenuItem pops
+                // its own route before running onTap, and opening a dialog
+                // mid-teardown throws "No Overlay widget found".
+                onTap: () => WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => controller.openGameSetupDialog(cancellable: true),
+                ),
+                value: 'Mulai Ulang',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh_rounded, color: theme.indicatorColor),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Mulai Ulang',
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                     ),
                   ],
                 ),
@@ -178,9 +171,13 @@ class DashboardView extends GetView<DashboardController> {
       bottom: PreferredSize(
         preferredSize: Get.size * 0.15,
         child: Container(
-          margin: const EdgeInsets.all( 10),
+          margin: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: theme.canvasColor,
+            gradient: RadialGradient(
+              colors: [theme.hoverColor, theme.canvasColor],
+              center: Alignment.bottomLeft,
+              radius: 0.9,
+            ),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Showcase(
@@ -191,20 +188,25 @@ class DashboardView extends GetView<DashboardController> {
               margin: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      _IndicatorChip(icon: Icons.flag_circle, text: '500'),
-                      _IndicatorChip(
-                        icon: Icons.add_circle_outline_rounded,
-                        text: '5',
-                      ),
-                      _IndicatorChip(icon: Icons.person_2_rounded, text: '4'),
-                    ],
+                  Obx(
+                    () => Row(
+                      children: [
+                        _IndicatorChip(
+                          icon: Icons.emoji_events_rounded,
+                          text: '${controller.winningScore}',
+                        ),
+                        _IndicatorChip(
+                          icon: Icons.add_circle_outline_rounded,
+                          text: '${controller.scoreStep}',
+                        ),
+                        _IndicatorChip(
+                          icon: Icons.person_2_rounded,
+                          text: '${controller.playerCount}',
+                        ),
+                      ],
+                    ),
                   ),
-                  Divider(
-                    color: Colors.grey,
-                    thickness: 1,
-                  ),
+                  Divider(color: Colors.grey, thickness: 1),
                   Obx(
                     () => Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -253,23 +255,28 @@ class DashboardView extends GetView<DashboardController> {
                       ),
                     ),
                     onPressed: controller.openAddScoreDialog,
-                    child:Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        
-                        Text('+ Tambah Skor', style: TextStyle(
-                          fontFamily: 'Roboto',
-                          color: theme.scaffoldBackgroundColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 1, // Softness of the shadow
-                              color: theme.indicatorColor, // Shadow color
-                              offset: Offset(1.0, 1.0), // X and Y displacement
-                            ),
-                          ],
-                        ),),
+                        Text(
+                          '+ Tambah Skor',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            color: theme.scaffoldBackgroundColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 10, // Softness of the shadow
+                                color: theme.indicatorColor, // Shadow color
+                                offset: Offset(
+                                  0.0,
+                                  0.0,
+                                ), // X and Y displacement
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
