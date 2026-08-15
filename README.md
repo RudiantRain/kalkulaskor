@@ -4,7 +4,7 @@ Aplikasi Android untuk mencatat skor segala jenis permainan secara konsekutif
 dan otomatis — dirancang untuk permainan kartu yang skornya diakumulasi tiap
 babak sampai ada yang menyentuh target.
 
-Dibuat oleh GPR E8/11 untuk mendukung kegiatan remian bapak-bapak GPR RT 02.
+Dibuat oleh GPR E8/11 untuk mendukung kegiatan remian bapak-bapak GPR RT 02, Kedanyang, Gresik, Jawa Timur, Indonesia
 
 ---
 
@@ -146,3 +146,5 @@ Kalau muncul peringatan `signed with the DEBUG key`, artinya
 **tidak bisa diunggah ke Play Store**.
 
 ## Screenshot
+<img src='https://github.com/RudiantRain/kalkulaskor/blob/main/assets/WhatsApp%20Image%202026-08-15%20at%2021.02.07.jpeg'><img src='https://github.com/RudiantRain/kalkulaskor/blob/main/assets/WhatsApp%20Image%202026-08-15%20at%2021.02.08.jpeg'>
+<img src='https://github.com/RudiantRain/kalkulaskor/blob/main/assets/WhatsApp%20Image%202026-08-15%20at%2021.02.08%20(2).jpeg'><img src='https://github.com/RudiantRain/kalkulaskor/blob/main/assets/WhatsApp%20Image%202026-08-15%20at%2021.02.08%20(1).jpeg'>
